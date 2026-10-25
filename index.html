@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>貓狗大戰 Cat vs Dog Battle</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- 頂部工具列 -->
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-icon">🐱⚡🐶</span>
+        <span class="brand-title">貓狗大戰 <small>Cat vs Dog Battle</small></span>
+      </div>
+      <div class="top-actions">
+        <button id="btn-tutorial-top" class="icon-btn" title="遊戲教學">📖 教學</button>
+        <button id="btn-sound-toggle" class="icon-btn" title="切換音效">🔊 音效: 開</button>
+        <button id="btn-home-top" class="icon-btn hidden" title="返回主選單">🏠 選單</button>
+      </div>
+    </header>
+
+    <!-- 遊戲主舞台容器 -->
+    <main class="stage-wrapper">
+      <div class="canvas-container" id="canvas-container">
+        <canvas id="game-canvas" width="1200" height="675"></canvas>
+
+        <!-- 戰鬥時雙方道具列疊層 (確保滑鼠點擊回饋極佳) -->
+        <div id="battle-ui" class="battle-ui hidden">
+          <!-- 左方：街頭野貓道具欄 -->
+          <div class="item-panel cat-panel" id="cat-item-panel">
+            <div class="panel-label">🐱 野貓道具 <span class="limit-tag">(各限用1次)</span></div>
+            <div class="item-buttons">
+              <button class="item-btn" data-side="cat" data-item="heal" title="立即恢復 1/3 最大生命值">
+                <span class="item-emoji">🩹</span>
+                <span class="item-name">補血 1/3</span>
+              </button>
+              <button class="item-btn" data-side="cat" data-item="giant" title="本回合骨頭變大2倍，傷害提升1.5倍">
+                <span class="item-emoji">💣</span>
+                <span class="item-name">加大傷害</span>
+              </button>
+              <button class="item-btn" data-side="cat" data-item="double" title="本回合可連續丟出 2 次攻擊">
+                <span class="item-emoji">⚡</span>
+                <span class="item-name">連丟2次</span>
+              </button>
+              <button class="item-btn" data-side="cat" data-item="special" title="黃金霸王旗魚骨：超強暴擊傷害">
+                <span class="item-emoji">🌟</span>
+                <span class="item-name">特級武器</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 中央回合操作提示 -->
+          <div class="turn-hint-pill" id="turn-hint-pill">
+            請按住角色集氣，放開滑鼠丟出！
+          </div>
+
+          <!-- 右方：後院家狗道具欄 -->
+          <div class="item-panel dog-panel" id="dog-item-panel">
+            <div class="panel-label">🐶 家狗道具 <span class="limit-tag">(各限用1次)</span></div>
+            <div class="item-buttons">
+              <button class="item-btn" data-side="dog" data-item="heal" title="立即恢復 1/3 最大生命值">
+                <span class="item-emoji">🩹</span>
+                <span class="item-name">補血 1/3</span>
+              </button>
+              <button class="item-btn" data-side="dog" data-item="giant" title="本回合骨頭變大2倍，傷害提升1.5倍">
+                <span class="item-emoji">💣</span>
+                <span class="item-name">加大傷害</span>
+              </button>
+              <button class="item-btn" data-side="dog" data-item="double" title="本回合可連續丟出 2 次攻擊">
+                <span class="item-emoji">⚡</span>
+                <span class="item-name">連丟2次</span>
+              </button>
+              <button class="item-btn" data-side="dog" data-item="special" title="皇家巨型金肉骨：超強暴擊傷害">
+                <span class="item-emoji">🌟</span>
+                <span class="item-name">特級武器</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. 開始主選單畫面 -->
+        <section id="screen-start" class="overlay-screen">
+          <div class="modal-card start-card">
+            <div class="hero-badges">
+              <div class="char-badge cat-badge">
+                <span class="badge-emoji">🐱</span>
+                <span class="badge-label">街頭野貓</span>
+                <span class="badge-weapon">🐟 飛天魚骨</span>
+              </div>
+              <div class="vs-medallion">VS</div>
+              <div class="char-badge dog-badge">
+                <span class="badge-emoji">🐶</span>
+                <span class="badge-label">後院家狗</span>
+                <span class="badge-weapon">🦴 強力肉骨</span>
+              </div>
+            </div>
+            <h1 class="game-title">貓狗大戰</h1>
+            <p class="game-subtitle">經典 2D 拋物線風阻對決 ‧ 僅需滑鼠按住角色蓄力即可暢玩！</p>
+            <div class="menu-btn-group">
+              <button id="btn-go-select" class="primary-btn pulse-btn">🎮 開始遊戲</button>
+              <button id="btn-go-tutorial" class="secondary-btn">📖 玩法與道具教學</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 選角色、模式與場景畫面 -->
+        <section id="screen-select" class="overlay-screen hidden">
+          <div class="modal-card select-card">
+            <h2 class="section-title">⚔️ 對戰準備設定</h2>
+
+            <!-- 模式選擇 -->
+            <div class="config-block">
+              <label class="config-label">1. 選擇遊玩模式</label>
+              <div class="option-grid cols-2" id="mode-options">
+                <button class="option-card active" data-mode="1p">
+                  <span class="opt-icon">👤 vs 🤖</span>
+                  <span class="opt-title">單人挑戰電腦</span>
+                  <span class="opt-desc">一人遊玩，迎戰智慧 AI 對手</span>
+                </button>
+                <button class="option-card" data-mode="2p">
+                  <span class="opt-icon">👤 vs 👤</span>
+                  <span class="opt-title">雙人同機對戰</span>
+                  <span class="opt-desc">兩位玩家輪流使用滑鼠對決</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 角色選擇 (單人模式選擇自己扮演誰；雙人模式提示雙方位置) -->
+            <div class="config-block" id="role-config-block">
+              <label class="config-label" id="role-config-title">2. 選擇你要扮演的角色</label>
+              <div class="option-grid cols-2" id="role-options">
+                <button class="option-card active" data-role="cat">
+                  <span class="opt-icon">🐱 🐟</span>
+                  <span class="opt-title">街頭野貓 (左方)</span>
+                  <span class="opt-desc">盤踞街頭巷弄，投擲鋒利魚骨頭</span>
+                </button>
+                <button class="option-card" data-role="dog">
+                  <span class="opt-icon">🐶 🦴</span>
+                  <span class="opt-title">後院家狗 (右方)</span>
+                  <span class="opt-desc">守護溫馨後院，投擲厚重肉骨頭</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- AI 難度選擇 (僅單人模式顯示) -->
+            <div class="config-block" id="ai-config-block">
+              <label class="config-label">3. 電腦 AI 難度</label>
+              <div class="option-grid cols-3" id="difficulty-options">
+                <button class="option-card" data-difficulty="easy">
+                  <span class="opt-icon">🌱</span>
+                  <span class="opt-title">簡單</span>
+                  <span class="opt-desc">休閒練習，AI 較常失誤</span>
+                </button>
+                <button class="option-card active" data-difficulty="normal">
+                  <span class="opt-icon">⚔️</span>
+                  <span class="opt-title">普通</span>
+                  <span class="opt-desc">考慮風向，具挑戰性</span>
+                </button>
+                <button class="option-card" data-difficulty="hard">
+                  <span class="opt-icon">🔥</span>
+                  <span class="opt-title">困難</span>
+                  <span class="opt-desc">精算風阻與道具策略</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 場景選擇 -->
+            <div class="config-block">
+              <label class="config-label">4. 選擇對戰場景</label>
+              <div class="option-grid cols-4" id="scene-options">
+                <button class="option-card active" data-scene="street">
+                  <span class="opt-icon">🏡</span>
+                  <span class="opt-title">經典街頭後院</span>
+                  <span class="opt-desc">木籬笆與晴朗午後</span>
+                </button>
+                <button class="option-card" data-scene="park">
+                  <span class="opt-icon">🌳</span>
+                  <span class="opt-title">陽光花園磚牆</span>
+                  <span class="opt-desc">紅磚牆與綠茵花園</span>
+                </button>
+                <button class="option-card" data-scene="night">
+                  <span class="opt-icon">🌙</span>
+                  <span class="opt-title">霓虹月夜街巷</span>
+                  <span class="opt-desc">星空夜市與高聳石牆</span>
+                </button>
+                <button class="option-card" data-scene="random">
+                  <span class="opt-icon">🎲</span>
+                  <span class="opt-title">隨機場景</span>
+                  <span class="opt-desc">每局隨機抽選戰場</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button id="btn-back-start" class="secondary-btn">⬅ 返回</button>
+              <button id="btn-start-battle" class="primary-btn pulse-btn">🔥 開始對戰！</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. 教學畫面 (Modal) -->
+        <section id="screen-tutorial" class="overlay-screen hidden">
+          <div class="modal-card tutorial-card">
+            <h2 class="section-title">📖 貓狗大戰：玩法與道具指南</h2>
+            <div class="tutorial-grid">
+              <div class="tut-box">
+                <h3>🖱️ 1. 滑鼠蓄力投擲</h3>
+                <p>全程僅需<strong>滑鼠</strong>即可遊玩！輪到你的回合時，將滑鼠移到<strong>自己扮演的角色身上按住左鍵不放</strong>，頭頂會出現蓄力條。看準力道後<strong>放開滑鼠左鍵</strong>，即可將魚骨頭或肉骨頭沿拋物線丟向對手！</p>
+              </div>
+              <div class="tut-box">
+                <h3>🌬️ 2. 風向與風力影響</h3>
+                <p>畫面正上方會顯示每回合隨機變化的<strong>視覺化風向槽與流動方向</strong>（無數字提示，可搭配飄動落葉體感判斷）。<strong>順風</strong>時只需較小蓄力；<strong>逆風</strong>時必須蓄更多力氣才能飛越中間的籬笆圍牆！</p>
+              </div>
+              <div class="tut-box full-width">
+                <h3>🎒 3. 四大戰術道具（每場比賽各限使用 1 次）</h3>
+                <div class="tut-items-row">
+                  <div class="tut-item">
+                    <span class="tut-emoji">🩹</span>
+                    <div>
+                      <strong>補血 (Heal)</strong>
+                      <p>立即恢復最大生命值的 <strong>1/3</strong>，危急時刻逆轉戰局。</p>
+                    </div>
+                  </div>
+                  <div class="tut-item">
+                    <span class="tut-emoji">💣</span>
+                    <div>
+                      <strong>加大傷害 (Giant)</strong>
+                      <p>本發投擲物<strong>體積變大 2 倍</strong>、更容易命中且<strong>傷害提升 1.5 倍</strong>。</p>
+                    </div>
+                  </div>
+                  <div class="tut-item">
+                    <span class="tut-emoji">⚡</span>
+                    <div>
+                      <strong>這回合丟2次</strong>
+                      <p>只需<strong>蓄力一次</strong>！第 1 發結束後，角色會自動以<strong>完全相同的力量</strong>再丟出第 2 發！</p>
+                    </div>
+                  </div>
+                  <div class="tut-item">
+                    <span class="tut-emoji">🌟</span>
+                    <div>
+                      <strong>特級武器</strong>
+                      <p>召喚<strong>黃金霸王魚骨 / 皇家巨型金肉骨</strong>，造成毀滅性重擊傷害！</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id="btn-close-tutorial" class="primary-btn">👍 我學會了！</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. 結算與再來一局畫面 -->
+        <section id="screen-gameover" class="overlay-screen hidden">
+          <div class="modal-card gameover-card">
+            <div class="winner-banner" id="winner-banner">🏆 勝利！</div>
+            <div class="winner-avatar" id="winner-avatar">🐱</div>
+            <h2 class="winner-title" id="winner-title">街頭野貓 獲勝！</h2>
+            <p class="winner-subtitle" id="winner-subtitle">精準的魚骨頭拋物線徹底征服了後院！</p>
+
+            <div class="stats-grid" id="gameover-stats">
+              <div class="stat-item">
+                <span class="stat-label">對戰總回合</span>
+                <span class="stat-val" id="stat-turns">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">🐱 野貓命中率</span>
+                <span class="stat-val" id="stat-cat-acc">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">🐶 家狗命中率</span>
+                <span class="stat-val" id="stat-dog-acc">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">🐱 剩餘血量 / 🐶 剩餘血量</span>
+                <span class="stat-val" id="stat-hp-remain">0 / 0</span>
+              </div>
+            </div>
+
+            <div class="modal-footer gameover-actions">
+              <button id="btn-rematch" class="primary-btn pulse-btn">🔄 再來一局</button>
+              <button id="btn-reselect" class="secondary-btn">🎨 重選角色與場景</button>
+              <button id="btn-gameover-home" class="secondary-btn">🏠 主選單</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
