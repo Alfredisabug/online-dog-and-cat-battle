@@ -53,6 +53,19 @@ export class Game {
     requestAnimationFrame((t) => this.loop(t));
   }
 
+  /**
+   * 觸覺震動回饋 (支援手機行動裝置，不支援時安全略過)
+   */
+  vibrate(pattern) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {
+        // 略過權限或不支援的環境
+      }
+    }
+  }
+
   resetCombatants() {
     this.fighters = {
       cat: {
@@ -286,7 +299,16 @@ export class Game {
       const dx = Math.abs(pos.x - charCenterX);
       const dy = Math.abs(pos.y - charCenterY);
 
-      if (dx <= 115 && dy <= 125) {
+      // 觸控優化：既支援角色周圍容許範圍 (dx<=145, dy<=155)，
+      // 也支援在自己陣營半場下半部 (避免被圍牆阻擋) 按住直接蓄力，大幅優化手機手感
+      const isNearCharacter = dx <= 145 && dy <= 155;
+      const isSideZone =
+        pos.y >= 220 &&
+        (this.currentTurn === 'cat'
+          ? pos.x >= 20 && pos.x <= 540
+          : pos.x >= 660 && pos.x <= 1180);
+
+      if (isNearCharacter || isSideZone) {
         this.startPlayerCharge();
       } else {
         this.spawnFloatingText(
@@ -331,6 +353,11 @@ export class Game {
     window.addEventListener('touchend', () => {
       handlePointerUp();
     });
+
+    // 補齊 touchcancel，避免手機滑出畫面或來電時集氣卡住
+    window.addEventListener('touchcancel', () => {
+      handlePointerUp();
+    });
   }
 
   startPlayerCharge() {
@@ -340,6 +367,7 @@ export class Game {
     this.chargeDir = 1;
     this.fighters[this.currentTurn].pose = 'charging';
     this.sound.startChargeSound();
+    this.vibrate(12);
     this.syncUI();
   }
 
@@ -365,6 +393,9 @@ export class Game {
     );
 
     this.sound.playThrow(Boolean(fighter.activeBuffs.special));
+    if (!this.isAiCharging) {
+      this.vibrate(25);
+    }
 
     // 若沒有剩餘連擊次數，才清除單回合強化狀態；若處於「連丟2次」，保留蓄力給自動第 2 發
     if (this.extraThrowsLeft === 0) {
@@ -442,8 +473,18 @@ export class Game {
         isMax ? '#ffd32a' : '#ff6b6b',
         isMax ? 32 : 18
       );
+
+      // 觸覺回饋
+      if (isMax || hit.hitTier === 'crit') {
+        this.vibrate([45, 30, 60]);
+      } else if (hit.hitTier === 'normal') {
+        this.vibrate(35);
+      } else {
+        this.vibrate(18);
+      }
     } else if (hit.type === 'wall') {
       this.sound.playHitWallOrGround();
+      this.vibrate(15);
       this.spawnFloatingText(hit.x, hit.y - 20, '🧱 撞牆!', '#dfe4ea');
       this.spawnParticles(hit.x, hit.y, '#e67e22', 14);
     } else {
@@ -466,6 +507,7 @@ export class Game {
         this.fighters[loserSide].pose = 'defeat';
         this.state = 'GAMEOVER';
         this.sound.playVictory();
+        this.vibrate([60, 40, 60, 40, 100]);
         if (this.callbacks.onGameOver) {
           this.callbacks.onGameOver(this.getMatchSummary(winnerSide));
         }
@@ -575,6 +617,9 @@ export class Game {
       if (this.chargePower >= 1.0) {
         this.chargePower = 1.0;
         this.chargeDir = -1;
+        if (!this.isAiCharging) {
+          this.vibrate(18);
+        }
       } else if (this.chargePower <= 0.06) {
         this.chargePower = 0.06;
         this.chargeDir = 1;
@@ -639,8 +684,10 @@ export class Game {
     // 1. 繪製背景場景、地面與中央籬笆圍牆
     this.sceneRenderer.render(ctx, this.actualScene, this.wind, time);
 
-    // 2. 若正在蓄力，繪製短前導拋物線瞄準點
+    // 2. 若正在蓄力，繪製短前導拋物線瞄準點與中央蓄力條 (行動端不怕手指遮擋)
     if (this.state === 'BATTLE' && this.phase === 'CHARGING') {
+      this.drawCenterChargingBar(ctx);
+
       const pts = PhysicsEngine.getAimPreviewPoints(
         this.currentTurn,
         this.chargePower,
@@ -759,6 +806,52 @@ export class Game {
       ctx.fillText(ft.text, ft.x, ft.y);
       ctx.restore();
     }
+  }
+
+  /**
+   * 繪製中央大力量蓄力條 (為行動端與手指遮蔽提供最清晰的反饋)
+   */
+  drawCenterChargingBar(ctx) {
+    const barW = 260;
+    const barH = 16;
+    const x = (CONFIG.CANVAS_WIDTH - barW) / 2;
+    const y = 92;
+
+    ctx.save();
+    // 半透明背景背板
+    ctx.fillStyle = 'rgba(15, 20, 34, 0.92)';
+    ctx.strokeStyle = '#ffd32a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 14, y - 6, barW + 28, barH + 26, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // 槽底
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, 8);
+    ctx.fill();
+
+    // 蓄力填充
+    const fillW = Math.max(6, barW * this.chargePower);
+    const grad = ctx.createLinearGradient(x, y, x + barW, y);
+    grad.addColorStop(0, '#2ed573');
+    grad.addColorStop(0.5, '#ffa502');
+    grad.addColorStop(1, '#ff4757');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, fillW, barH, 8);
+    ctx.fill();
+
+    // 力量數值文字
+    const percent = Math.round(this.chargePower * 100);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`⚡ 蓄力中 ${percent}% (放開即投擲)`, CONFIG.CANVAS_WIDTH / 2, y + barH + 14);
+
+    ctx.restore();
   }
 
   loop(time) {

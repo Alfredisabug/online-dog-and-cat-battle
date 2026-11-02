@@ -19,6 +19,12 @@
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 body {
@@ -26,6 +32,7 @@ body {
   background: radial-gradient(circle at center, #252b42 0%, #10131d 100%);
   color: var(--text-light);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -36,6 +43,7 @@ body {
   flex-direction: column;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* 頂部導覽列 */
@@ -118,6 +126,7 @@ body {
   height: 100%;
   display: block;
   cursor: pointer;
+  touch-action: none;
 }
 
 /* 戰鬥下方道具面板疊層 */
@@ -657,5 +666,216 @@ body {
   }
   .turn-hint-pill {
     display: none;
+  }
+}
+
+/* 直螢幕轉向提示遮罩 (引導手機玩家旋轉至橫螢幕) */
+.orientation-guard {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 13, 22, 0.96);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+@media (orientation: portrait) and (max-width: 920px) {
+  .orientation-guard {
+    display: flex;
+  }
+}
+
+.guard-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 320px;
+}
+
+.rotate-phone-anim {
+  font-size: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 90px;
+  height: 90px;
+}
+
+.phone-icon {
+  animation: phoneRotate 2.4s ease-in-out infinite alternate;
+  display: inline-block;
+}
+
+.rotate-arrow {
+  position: absolute;
+  font-size: 1.8rem;
+  right: -6px;
+  bottom: 4px;
+  animation: spin 3s linear infinite;
+}
+
+@keyframes phoneRotate {
+  0%, 25% { transform: rotate(0deg); }
+  75%, 100% { transform: rotate(90deg); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.guard-content h2 {
+  font-size: 1.35rem;
+  color: var(--gold);
+  font-weight: 800;
+}
+
+.guard-content p {
+  font-size: 0.95rem;
+  color: #dfe4ea;
+}
+
+.guard-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+
+/* 橫向矮螢幕 (手機 Landscape 模式) 適配 */
+@media (max-height: 540px) and (orientation: landscape) {
+  .top-bar {
+    height: 38px;
+    padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  }
+
+  .brand {
+    font-size: 0.95rem;
+    gap: 6px;
+  }
+
+  .brand-icon {
+    font-size: 1.1rem;
+  }
+
+  .brand-title small {
+    display: none;
+  }
+
+  .icon-btn {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+  }
+
+  .stage-wrapper {
+    padding: 2px max(8px, env(safe-area-inset-right)) max(2px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .canvas-container {
+    max-height: calc(100vh - 42px);
+    max-height: calc(100dvh - 42px);
+    border-radius: 12px;
+  }
+
+  .battle-ui {
+    bottom: max(4px, env(safe-area-inset-bottom));
+    padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+  }
+
+  .item-panel {
+    padding: 4px 6px;
+    border-radius: 10px;
+    transition: all 0.25s ease;
+  }
+
+  .item-panel.inactive-turn {
+    opacity: 0.22;
+    transform: scale(0.92);
+    pointer-events: none;
+  }
+
+  .item-panel.active-turn {
+    opacity: 1;
+    transform: scale(1.02);
+    box-shadow: 0 0 16px rgba(255, 211, 42, 0.5);
+  }
+
+  .panel-label {
+    font-size: 0.68rem;
+    margin-bottom: 2px;
+  }
+
+  .item-btn {
+    width: 48px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .item-emoji {
+    font-size: 1.05rem;
+  }
+
+  .item-name {
+    font-size: 0.6rem;
+  }
+
+  .modal-card {
+    max-height: 92vh;
+    max-height: 92dvh;
+    padding: 14px 18px;
+    border-radius: 16px;
+  }
+
+  .start-card .hero-badges {
+    margin-bottom: 8px;
+  }
+
+  .char-badge {
+    padding: 6px 12px;
+  }
+
+  .game-title {
+    font-size: 1.55rem;
+    margin-bottom: 4px;
+  }
+
+  .game-subtitle {
+    margin-bottom: 10px;
+    font-size: 0.82rem;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    padding: 7px 16px;
+    font-size: 0.88rem;
+  }
+
+  .option-section {
+    margin-bottom: 10px;
+  }
+
+  .stats-grid {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .stat-item {
+    padding: 6px 8px;
+  }
+
+  .winner-avatar {
+    font-size: 3rem;
+  }
+
+  .winner-title {
+    font-size: 1.45rem;
   }
 }

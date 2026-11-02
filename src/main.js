@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnHomeTop = document.getElementById('btn-home-top');
   const btnSoundToggle = document.getElementById('btn-sound-toggle');
   const btnTutorialTop = document.getElementById('btn-tutorial-top');
+  const btnFullscreen = document.getElementById('btn-fullscreen');
 
   const catPanel = document.getElementById('cat-item-panel');
   const dogPanel = document.getElementById('dog-item-panel');
@@ -192,6 +193,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (enabled) sound.playClick();
   });
 
+  // 全螢幕切換支援 (行動端/桌面皆適用)
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
+  const updateFullscreenBtn = () => {
+    if (btnFullscreen) {
+      btnFullscreen.textContent = document.fullscreenElement ? '🗗 視窗' : '⛶ 全螢幕';
+    }
+  };
+
+  if (btnFullscreen) {
+    btnFullscreen.addEventListener('click', () => {
+      sound.playClick();
+      toggleFullscreen();
+    });
+  }
+  document.addEventListener('fullscreenchange', updateFullscreenBtn);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
   btnHomeTop.addEventListener('click', () => {
     sound.playClick();
     game.state = 'MENU';
@@ -265,4 +298,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btnHomeTop.classList.add('hidden');
     showScreen(screenStart);
   });
+
+  // PWA Service Worker 註冊 (支援離線與加入主畫面)
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
 });

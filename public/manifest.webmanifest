@@ -1,0 +1,20 @@
+{
+  "name": "貓狗大戰 Cat vs Dog Battle",
+  "short_name": "貓狗大戰",
+  "description": "經典貓狗拋物線對戰遊戲，支援單人 AI 與雙人同機對戰",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#161925",
+  "theme_color": "#161925",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

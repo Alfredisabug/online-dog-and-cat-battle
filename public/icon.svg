@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#252b42"/>
+      <stop offset="100%" stop-color="#10131d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffa502"/>
+      <stop offset="100%" stop-color="#ffd32a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="94" fill="none" stroke="url(#gold)" stroke-width="8" opacity="0.6"/>
+  <circle cx="256" cy="230" r="150" fill="rgba(255,255,255,0.06)"/>
+  <text x="256" y="235" text-anchor="middle" font-size="130" dominant-baseline="central">🐱⚡🐶</text>
+  <text x="256" y="380" text-anchor="middle" font-size="64" font-weight="900" fill="url(#gold)" font-family="system-ui, -apple-system, sans-serif" letter-spacing="4">貓狗大戰</text>
+</svg>
